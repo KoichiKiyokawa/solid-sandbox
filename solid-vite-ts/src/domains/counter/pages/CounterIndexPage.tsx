@@ -1,33 +1,39 @@
 import { createMemo, createSignal } from "solid-js"
+import { createStore, produce } from "solid-js/store"
 import { Counter } from "../components/Counter"
 
 export const CounterIndexPage = () => {
-  const [getCounters, setCounters] = createSignal<Counter[]>([])
+  // ネストしたステートにはcreateStoreを使うのがよいっぽい。一部の状態の変更を検知できるから。
+  // createSignalだと、createSignal自体をネストさせていく必要があって面倒。
+  // https://www.solidjs.com/tutorial/stores_createstore?solved
+  const [counters, setCounters] = createStore<{ value: Counter[] }>({
+    value: [],
+  })
   const sum = createMemo(() =>
-    getCounters().reduce((acc, counter) => acc + counter.count, 0)
+    counters.value.reduce((acc, counter) => acc + counter.count, 0)
   )
 
   return (
     <div>
       <h1>CounterIndexPage</h1>
-      {getCounters().map((counter, index) => (
+      {counters.value.map((counter, index) => (
         <Counter
           {...counter}
           onIncrement={() =>
-            setCounters((prev) => {
-              const newCounters = [...prev]
-              newCounters[index].count++
-              return newCounters
-            })
+            setCounters(
+              produce((prev) => {
+                prev.value[index].count++
+              })
+            )
           }
           onDecrement={() =>
-            setCounters((prev) => {
-              if (prev[index].count === 0) return prev
+            setCounters(
+              produce((prev) => {
+                if (prev.value[index].count === 0) return
 
-              const newCounters = [...prev]
-              newCounters[index].count--
-              return newCounters
-            })
+                prev.value[index].count--
+              })
+            )
           }
         />
       ))}
@@ -35,7 +41,14 @@ export const CounterIndexPage = () => {
 
       <button
         onClick={() =>
-          setCounters((prev) => [...prev, { title: "", count: 0 }])
+          setCounters(
+            produce((prev) => {
+              prev.value.push({
+                title: "new",
+                count: 0,
+              })
+            })
+          )
         }
       >
         追加
