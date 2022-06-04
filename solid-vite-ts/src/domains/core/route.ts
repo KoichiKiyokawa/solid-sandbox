@@ -4,4 +4,7 @@ export const paths = {
   counter: {
     index: "/counter",
   },
+  todos: {
+    index: "/todos",
+  },
 }
